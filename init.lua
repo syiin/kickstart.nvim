@@ -398,6 +398,7 @@ require('lazy').setup({
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'flutter')
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -609,6 +610,7 @@ require('lazy').setup({
         gopls = {},
         -- pyright = {},
         rust_analyzer = {},
+        dart = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -929,7 +931,17 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
+  -- {
+  --   'nvimdev/lspsaga.nvim',
+  --   config = function()
+  --     require('lspsaga').setup {}
+  --   end,
+  --   dependencies = {
+  --     'nvim-treesitter/nvim-treesitter', -- optional
+  --     'nvim-tree/nvim-web-devicons', -- optional
+  --   },
+  -- },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
