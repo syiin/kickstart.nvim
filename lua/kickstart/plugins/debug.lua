@@ -6,6 +6,113 @@
 -- be extended to other languages as well. That's why it's called
 -- kickstart.nvim and not kitchen-sink.nvim ;)
 
+-- return {
+--   {
+--     'mfussenegger/nvim-dap',
+--     dependencies = {
+--       'leoluz/nvim-dap-go',
+--       'rcarriga/nvim-dap-ui',
+--       'theHamsta/nvim-dap-virtual-text',
+--       'nvim-neotest/nvim-nio',
+--       'williamboman/mason.nvim',
+--     },
+--     config = function()
+--       local dap = require 'dap'
+--       local ui = require 'dapui'
+--
+--       require('dapui').setup()
+--       require('dap-go').setup()
+--
+--       dap.adapters.flutter = {
+--         type = 'executable',
+--         command = 'fvm',
+--         dartAttachVmServiceUri = function()
+--           -- Use the WebSocket URI explicitly for the correct app instance
+--           return 'ws://127.0.0.1:56078/GIVoW4bjqLw=/ws'
+--         end, -- command = '/opt/homebrew/bin/fvm',
+--         -- args = { 'flutter', 'debug_adapter' },
+--       }
+--
+--       dap.configurations.dart = {
+--         {
+--           type = 'flutter',
+--           request = 'launch',
+--           name = 'Launch Flutter app',
+--           program = '${workspaceFolder}/lib/main_development.dart',
+--         },
+--         {
+--           type = 'flutter',
+--           request = 'attach',
+--           name = 'Attach to running Flutter app',
+--           cwd = '${workspaceFolder}',
+--           dartAttachVmServiceUri = function()
+--             return vim.fn.input 'Enter VM Service URI: '
+--           end,
+--         },
+--       }
+--       require('nvim-dap-virtual-text').setup {
+--         -- This just tries to mitigate the chance that I leak tokens here. Probably won't stop it from happening...
+--         display_callback = function(variable)
+--           local name = string.lower(variable.name)
+--           local value = string.lower(variable.value)
+--           if name:match 'secret' or name:match 'api' or value:match 'secret' or value:match 'api' then
+--             return '*****'
+--           end
+--
+--           if #variable.value > 15 then
+--             return ' ' .. string.sub(variable.value, 1, 15) .. '... '
+--           end
+--
+--           return ' ' .. variable.value
+--         end,
+--
+--         ensure_installed = {
+--           -- Update this to ensure that you have the debuggers for the langs you want
+--           'dart',
+--           'delve',
+--         },
+--       }
+--
+--       -- Handled by nvim-dap-go
+--       -- dap.adapters.go = {
+--       --   type = "server",
+--       --   port = "${port}",
+--       --   executable = {
+--       --     command = "dlv",
+--       --     args = { "dap", "-l", "127.0.0.1:${port}" },
+--       --   },
+--       -- }
+--       vim.keymap.set('n', '<space>b', dap.toggle_breakpoint)
+--       vim.keymap.set('n', '<space>gb', dap.run_to_cursor)
+--
+--       -- Eval var under cursor
+--       vim.keymap.set('n', '<space>?', function()
+--         require('dapui').eval(nil, { enter = true })
+--       end)
+--
+--       vim.keymap.set('n', '<F1>', dap.continue)
+--       vim.keymap.set('n', '<F2>', dap.step_into)
+--       vim.keymap.set('n', '<F3>', dap.step_over)
+--       vim.keymap.set('n', '<F4>', dap.step_out)
+--       vim.keymap.set('n', '<F5>', dap.step_back)
+--       vim.keymap.set('n', '<F13>', dap.restart)
+--
+--       dap.listeners.before.attach.dapui_config = function()
+--         ui.open()
+--       end
+--       dap.listeners.before.launch.dapui_config = function()
+--         ui.open()
+--       end
+--       dap.listeners.before.event_terminated.dapui_config = function()
+--         ui.close()
+--       end
+--       dap.listeners.before.event_exited.dapui_config = function()
+--         ui.close()
+--       end
+--     end,
+--   },
+-- }
+--
 return {
   -- NOTE: Yes, you can install new plugins here!
   'mfussenegger/nvim-dap',
@@ -49,7 +156,7 @@ return {
   config = function()
     local dap = require 'dap'
     local dapui = require 'dapui'
-
+    dap.set_log_level 'DEBUG'
     require('mason-nvim-dap').setup {
       -- Makes a best effort to setup the various debuggers with
       -- reasonable debug configurations
@@ -70,9 +177,19 @@ return {
 
     dap.adapters.flutter = {
       type = 'executable',
-      command = 'flutter',
-      args = { 'debug-adapter' },
+      command = 'fvm',
+      args = { 'flutter', 'debug_adapter' },
     }
+
+    local function get_vm_service_uri()
+      -- Use a shell command to fetch the WebSocket URI dynamically
+      local handle = io.popen "ps aux | grep -E 'dart.*vm-service' | grep -o 'ws://[^ ]*'"
+      local result = handle:read '*a'
+      handle:close()
+
+      -- Clean and return the first valid WebSocket URI
+      return result:match 'ws://[%w%.%-:%d_/=]+'
+    end
 
     dap.configurations.dart = {
       {
@@ -81,33 +198,30 @@ return {
         name = 'Launch Flutter app',
         program = '${workspaceFolder}/lib/main_development.dart',
       },
+      {
+        type = 'flutter',
+        request = 'attach',
+        name = 'Attach to running Flutter app',
+        cwd = '${workspaceFolder}',
+        dartAttachVmServiceUri = get_vm_service_uri,
+      },
     }
 
     -- Dap UI setup
     -- For more information, see |:help nvim-dap-ui|
-    dapui.setup {
-      -- Set icons to characters that are more likely to work in every terminal.
-      --    Feel free to remove or use ones that you like more! :)
-      --    Don't feel like these are good choices.
-      icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
-      controls = {
-        icons = {
-          pause = '⏸',
-          play = '▶',
-          step_into = '⏎',
-          step_over = '⏭',
-          step_out = '⏮',
-          step_back = 'b',
-          run_last = '▶▶',
-          terminate = '⏹',
-          disconnect = '⏏',
-        },
-      },
-    }
+    local dap, dapui = require 'dap', require 'dapui'
 
-    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
+    dapui.setup()
+
+    dap.listeners.after.event_initialized['dapui_config'] = function()
+      dapui.open()
+    end
+    dap.listeners.before.event_terminated['dapui_config'] = function()
+      dapui.close()
+    end
+    dap.listeners.before.event_exited['dapui_config'] = function()
+      dapui.close()
+    end
 
     -- Install golang specific config
     require('dap-go').setup {
