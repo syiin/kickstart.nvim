@@ -8,6 +8,7 @@ return {
     config = function()
       require('logbook').setup {
         default_path = '~/Gosei/logbook',
+        -- default_path = '/Users/syiin/Gosei/logbook',
         file_extension = '.md',
       }
 
