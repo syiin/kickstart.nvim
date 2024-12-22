@@ -1,4 +1,4 @@
--- From TJ Devries
+-- From TJ Devries (https://github.com/tjdevries/advent-of-nvim/blob/master/nvim/plugin/floaterminal.lua)
 vim.keymap.set('t', '<esc><esc>', '<c-\\><c-n>')
 
 local state = {
