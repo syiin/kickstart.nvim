@@ -7,15 +7,28 @@ return {
     },
     config = function()
       require('logbook').setup {
+        mode = 'weekly',
+        templates = {
+          daily = '# Daily Log: %s\n\nTasks:\n- [ ] \n\nNotes:\n',
+          weekly = '# Week %s\n\nGoals:\n\nAchievements:\n',
+          scratchpad = '# Quick Notes\n\n',
+        },
         default_path = '~/Gosei/logbook',
-        -- default_path = '/Users/syiin/Gosei/logbook',
         file_extension = '.md',
       }
 
       -- Load the telescope extension
       require('telescope').load_extension 'logbook'
 
-      -- Optional: Add keymaps for searching
+      vim.keymap.set('n', '<leader>ld', function()
+        require('logbook.utils').quick_logbook(nil, 'daily')
+      end)
+      vim.keymap.set('n', '<leader>lw', function()
+        require('logbook.utils').quick_logbook(nil, 'weekly')
+      end)
+      vim.keymap.set('n', '<leader>ls', function()
+        require('logbook.utils').quick_logbook(nil, 'scratchpad')
+      end)
       vim.keymap.set('n', '<leader>lf', '<cmd>Telescope logbook<cr>', { noremap = true, silent = true })
       vim.keymap.set('n', '<leader>lF', '<cmd>Telescope logbook_files<cr>', { noremap = true, silent = true })
     end,
