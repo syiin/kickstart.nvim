@@ -10,7 +10,7 @@ return {
         mode = 'weekly',
         templates = {
           daily = '# Daily Log: %s\n\nTasks:\n- [ ] \n\nNotes:\n',
-          weekly = '# Week %s\n\nGoals:\n\nAchievements:\n',
+          weekly = '# Week %s\n\nNotes:\n\nTasks:\n',
           scratchpad = '# Quick Notes\n\n',
         },
         default_path = '~/Gosei/logbook',
