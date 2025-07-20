@@ -133,6 +133,7 @@ return {
   },
   keys = function(_, keys)
     local dap = require 'dap'
+    dap.set_log_level 'TRACE'
     local dapui = require 'dapui'
     return {
       -- Basic debugging keymaps, feel free to change to your liking!
@@ -181,14 +182,28 @@ return {
       args = { 'flutter', 'debug_adapter' },
     }
 
+    -- local function get_vm_service_uri()
+    --   -- Use a shell command to fetch the WebSocket URI dynamically
+    --   local handle = io.popen "ps aux | grep -E 'dart.*vm-service' | grep -o 'ws://[^ ]*'"
+    --   local result = handle:read '*a'
+    --   handle:close()
+    --
+    --   -- Clean and return the first valid WebSocket URI
+    --   return result:match 'ws://[%w%.%-:%d_/=]+'
+    -- end
     local function get_vm_service_uri()
-      -- Use a shell command to fetch the WebSocket URI dynamically
-      local handle = io.popen "ps aux | grep -E 'dart.*vm-service' | grep -o 'ws://[^ ]*'"
+      -- More specific grep pattern for the VM service URI
+      local handle = io.popen "ps aux | grep -o 'VM Service.*ws://[^ ]*' | grep -o 'ws://[^ ]*'"
       local result = handle:read '*a'
       handle:close()
 
-      -- Clean and return the first valid WebSocket URI
-      return result:match 'ws://[%w%.%-:%d_/=]+'
+      local uri = result:match 'ws://[%w%.%-:%d_/=]+'
+      if not uri then
+        print 'No Flutter VM service URI found'
+        return nil
+      end
+      print('Found VM service URI: ' .. uri) -- Debug output
+      return uri
     end
 
     dap.configurations.dart = {
@@ -197,19 +212,24 @@ return {
         request = 'launch',
         name = 'Launch Flutter app',
         program = '${workspaceFolder}/lib/main_development.dart',
+        deviceId = '${command:flutter.getTargetDeviceId}',
       },
       {
         type = 'flutter',
         request = 'attach',
         name = 'Attach to running Flutter app',
         cwd = '${workspaceFolder}',
-        dartAttachVmServiceUri = get_vm_service_uri,
+        program = '${workspaceFolder}/lib/main_development.dart',
+        deviceId = '${command:flutter.getTargetDeviceId}',
+        -- dartAttachVmServiceUri = 'ws://127.0.0.1:54979/0eHc8S7_FUQ=/ws',
+        -- dartAttachVmServiceUri = get_vm_service_uri,
+        -- appId = 'com.urbanmetry.urby',
+        -- vmServicePort = 54979,
       },
     }
 
     -- Dap UI setup
     -- For more information, see |:help nvim-dap-ui|
-    local dap, dapui = require 'dap', require 'dapui'
 
     dapui.setup()
 
