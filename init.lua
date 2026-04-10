@@ -190,7 +190,7 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 --   vim.api.nvim_win_set_height(0, 5)
 -- end)
 
-vim.keymap.set('n', '<leader>st', 'Floaterminal')
+vim.keymap.set('n', '<leader>st', '<cmd>SideTerminal<CR>', { desc = '[S]how [T]erminal' })
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
@@ -677,8 +677,16 @@ require('lazy').setup({
         },
       }
 
+      local mason_lspconfig_servers = {}
+      local mason_mappings = require('mason-lspconfig').get_mappings().lspconfig_to_package
+      for server_name in pairs(servers or {}) do
+        if mason_mappings[server_name] then
+          table.insert(mason_lspconfig_servers, server_name)
+        end
+      end
+
       require('mason-lspconfig').setup {
-        ensure_installed = vim.tbl_keys(servers or {}),
+        ensure_installed = mason_lspconfig_servers,
         automatic_enable = false,
       }
 

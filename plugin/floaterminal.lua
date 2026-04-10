@@ -1,59 +1,48 @@
--- From TJ Devries (https://github.com/tjdevries/advent-of-nvim/blob/master/nvim/plugin/floaterminal.lua)
-vim.keymap.set('t', '<esc><esc>', '<c-\\><c-n>')
-
 local state = {
-  floating = {
+  terminal = {
     buf = -1,
     win = -1,
   },
 }
 
-local function create_floating_window(opts)
-  opts = opts or {}
-  local width = opts.width or math.floor(vim.o.columns * 0.8)
-  local height = opts.height or math.floor(vim.o.lines * 0.8)
+local function open_left_terminal()
+  local current_win = vim.api.nvim_get_current_win()
 
-  -- Calculate the position to center the window
-  local col = math.floor((vim.o.columns - width) / 2)
-  local row = math.floor((vim.o.lines - height) / 2)
+  vim.cmd 'topleft vsplit'
+  local win = vim.api.nvim_get_current_win()
+  vim.cmd('vertical resize ' .. math.floor(vim.o.columns * 0.5))
 
-  -- Create a buffer
-  local buf = nil
-  if vim.api.nvim_buf_is_valid(opts.buf) then
-    buf = opts.buf
+  if vim.api.nvim_buf_is_valid(state.terminal.buf) then
+    vim.api.nvim_win_set_buf(win, state.terminal.buf)
   else
-    buf = vim.api.nvim_create_buf(false, true) -- No file, scratch buffer
+    local buf = vim.api.nvim_create_buf(false, true)
+    state.terminal.buf = buf
+    vim.api.nvim_win_set_buf(win, buf)
+
+    vim.bo[buf].bufhidden = 'hide'
+    vim.bo[buf].filetype = 'terminal'
+
+    vim.fn.termopen(vim.o.shell)
   end
 
-  -- Define window configuration
-  local win_config = {
-    relative = 'editor',
-    width = width,
-    height = height,
-    col = col,
-    row = row,
-    style = 'minimal', -- No borders or extra UI elements
-    border = 'rounded',
-  }
+  state.terminal.win = win
 
-  -- Create the floating window
-  local win = vim.api.nvim_open_win(buf, true, win_config)
-
-  return { buf = buf, win = win }
-end
-
-local toggle_terminal = function()
-  if not vim.api.nvim_win_is_valid(state.floating.win) then
-    state.floating = create_floating_window { buf = state.floating.buf }
-    if vim.bo[state.floating.buf].buftype ~= 'terminal' then
-      vim.cmd.terminal()
-    end
-  else
-    vim.api.nvim_win_hide(state.floating.win)
+  if vim.api.nvim_win_is_valid(current_win) then
+    vim.api.nvim_set_current_win(win)
   end
+  vim.cmd 'startinsert'
 end
 
--- Example usage:
--- Create a floating window with default dimensions
+local function toggle_terminal()
+  if vim.api.nvim_win_is_valid(state.terminal.win) then
+    vim.api.nvim_win_hide(state.terminal.win)
+    state.terminal.win = -1
+    return
+  end
+
+  open_left_terminal()
+end
+
+vim.api.nvim_create_user_command('SideTerminal', toggle_terminal, {})
+-- Backward-compatible alias while the old floating terminal is disabled.
 vim.api.nvim_create_user_command('Floaterminal', toggle_terminal, {})
-vim.keymap.set('n', '<leader>st', '<cmd>Floaterminal<CR>')
