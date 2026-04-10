@@ -3,5 +3,8 @@ test.sh
 .luarc.json
 nvim
 
+.pi/
+nvim-linux-x86_64.tar.gz
+
 spell/
 lazy-lock.json

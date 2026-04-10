@@ -28,5 +28,4 @@ return {
       end,
     },
   },
-  require('lspconfig').dartls.setup {},
 }
